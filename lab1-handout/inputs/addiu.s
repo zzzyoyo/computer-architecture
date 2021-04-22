@@ -1,8 +1,17 @@
-		.text
-__start:	addiu $v0, $zero, 10
-		addiu $t0, $zero, 5
-		addiu $t1, $t0, 300
-		addiu $t2, $zero, 500
-		addiu $t3, $t2, 34
-		addiu $t3, $t3, 45
-		syscall
+.text
+mov r0, #10
+mov r1, #5
+add r2, r1, #300
+mov r3, #500
+add r4, r3, #34
+add r4, r4, #45
+swi #10
+
+
+
+r0 = 10
+r1 = 5
+r2 = 305
+r3 = 500
+r4 = 534
+r4 = 579

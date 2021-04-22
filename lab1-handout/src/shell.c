@@ -368,6 +368,7 @@ void load_program(char *program_filename) {
   ii = 0;
   while (fscanf(prog, "%x\n", &word) != EOF) {
     mem_write_32(MEM_TEXT_START + ii, word);
+//    printf("0x%x\n",word);
     ii += 4;
   }
 
@@ -388,6 +389,7 @@ void initialize(char *program_filename, int num_prog_files) {
   int i;
 
   init_memory();
+  printf("init\n");
   for ( i = 0; i < num_prog_files; i++ ) {
     load_program(program_filename);
     while(*program_filename++ != '\0');

@@ -9,8 +9,11 @@ void process_instruction()
      * access memory. */
 
 	NEXT_STATE = CURRENT_STATE;//value copy
+	NEXT_STATE.PC += 4;
+	printf("%d instructions\n", INSTRUCTION_COUNT);
 
 	INSTR_TYPE instr = mem_read_32(CURRENT_STATE.PC);
+	printf("0x%x\n",instr);
 	uint32_t opcode = GET_BITS(instr, WORD_WIDTH - 6, 6);
 	uint32_t op_high = GET_BITS(instr, WORD_WIDTH - 3, 3);
 	uint32_t op_low = GET_BITS(instr, WORD_WIDTH - 6, 3);
@@ -51,7 +54,7 @@ void process_instruction()
 			break;
 		}
 		default:{
-			printf("unknown instruction\n");
+			printf("process_instruction case 0: unknown instruction\n");
 			break;
 		}
 		}
@@ -59,18 +62,142 @@ void process_instruction()
 	}
 	case(1):{
 		//ALU I-type
+		process_i_alu(instr);
 		break;
 	}
 	case(4):{
 		//load word
+		process_lw(instr);
 		break;
 	}
 	case(5):{
 		//save word
+		process_sw(instr);
+		break;
+	}
+	default:{
+		printf("process_instruction: unknown instruction\n");
 		break;
 	}
     }
 }
+
+
+void process_lw(INSTR_TYPE instr){
+	uint32_t op_low = GET_BITS(instr, WORD_WIDTH - 6, 3);
+	int offset = (((int)GET_BITS(instr, 0, 16)) << 16)>>16;
+	uint32_t base = GET_BITS(instr, 21, 5);
+	uint32_t rt = GET_BITS(instr, 16, 5);
+	uint32_t load_word = mem_read_32(CURRENT_STATE.REGS[base] + offset);
+	switch(op_low){
+	case(0):{
+		//LB
+		NEXT_STATE.REGS[rt] = (((int)GET_BITS(load_word, 0, 8)) << 24)>>24;
+		break;
+	}
+	case(1):{
+		//LH
+		NEXT_STATE.REGS[rt] = (((int)GET_BITS(load_word, 0, 8)) << 16)>>16;
+		break;
+	}
+	case(3):
+	case(4):
+	case(5):{
+		//LW
+		//LBU
+		//LHU
+		NEXT_STATE.REGS[rt] = load_word;
+		break;
+	}
+	default:{
+		printf("process_lw: unknown instruction\n");
+		break;
+	}
+	}
+}
+
+
+
+void process_sw(INSTR_TYPE instr){
+	uint32_t op_low = GET_BITS(instr, WORD_WIDTH - 6, 3);
+	int offset = (((int)GET_BITS(instr, 0, 16)) << 16)>>16;
+	uint32_t base = GET_BITS(instr, 21, 5);
+	uint32_t address = CURRENT_STATE.REGS[base] + offset;
+	uint32_t rt = GET_BITS(instr, 16, 5);
+	switch(op_low){
+	case(0):{
+		//SB
+		mem_write_32(address, GET_BITS(CURRENT_STATE.REGS[rt], 0, 8));
+		break;
+	}
+	case(1):{
+		mem_write_32(address, GET_BITS(CURRENT_STATE.REGS[rt], 0, 16));
+		//SH
+		break;
+	}
+	case(3):{
+		//SW
+		mem_write_32(address, CURRENT_STATE.REGS[rt]);
+		break;
+	}
+	default:{
+		printf("process_sw: unknown instruction\n");
+		break;
+	}
+	}
+}
+
+void process_i_alu(INSTR_TYPE instr){
+	uint32_t func_low = GET_BITS(instr, 0, 3);
+	uint32_t rs = GET_BITS(instr, 21, 5);
+	uint32_t rt = GET_BITS(instr, 16, 5);
+	uint32_t uimm = GET_BITS(instr, 0, 16);
+	int imm = (((int)uimm)<<16)>>16;
+	switch(func_low){
+	case(0):
+	case(1):{
+		//ADDI
+		//ADDIU
+		NEXT_STATE.REGS[rt] = (int)CURRENT_STATE.REGS[rs] + imm;
+		break;
+	}
+	case(2):{
+		//SLTI
+		NEXT_STATE.REGS[rt] = ((int)CURRENT_STATE.REGS[rs] < imm);
+		break;
+	}
+	case(3):{
+		//SLTIU
+		NEXT_STATE.REGS[rt] = (CURRENT_STATE.REGS[rs] < uimm);
+		break;
+	}
+	case(4):{
+		//ANDI
+		NEXT_STATE.REGS[rt] = CURRENT_STATE.REGS[rs] & uimm;
+		break;
+	}
+	case(5):{
+		//ORI
+		NEXT_STATE.REGS[rt] = CURRENT_STATE.REGS[rs] | uimm;
+		break;
+	}
+	case(6):{
+		//XORI
+		NEXT_STATE.REGS[rt] = CURRENT_STATE.REGS[rs] ^ uimm;
+		break;
+	}
+	case(7):{
+		//LUI
+		NEXT_STATE.REGS[rt] = uimm << 16;
+		break;
+	}
+	default:{
+		printf("process_i_alu: unknown instruction\n");
+		break;
+	}
+	}
+}
+
 
 void process_complex_alu(INSTR_TYPE instr) {
 	//multiple div
@@ -112,7 +239,7 @@ void process_complex_alu(INSTR_TYPE instr) {
 		break;
 	}
 	default: {
-		printf("unknown instruction\n");
+		printf("process_complex_alu: unknown instruction\n");
 		break;
 	}
 	}
@@ -145,13 +272,15 @@ void process_special(INSTR_TYPE instr){
 		}
 		case(4):{
 			//SYSCALL
-			if(CURRENT_STATE.REGS[2] == 0x0a){
-				RUN_BIT = 0;
-			}
+			printf("SYSCALL\n");
+//			if(CURRENT_STATE.REGS[2] == 0x0a){
+//				RUN_BIT = 0;
+//			}
+			RUN_BIT = FALSE;
 			break;
 		}
 		default:{
-			printf("unknown instruction\n");
+			printf("process_special case 1: unknown instruction\n");
 			break;
 		}
 		}
@@ -191,7 +320,7 @@ void process_special(INSTR_TYPE instr){
 			break;
 		}
 		default:{
-			printf("unknown special instruction\n");
+			printf("process_special case 5: unknown special instruction\n");
 			break;
 		}
 		}
@@ -204,7 +333,7 @@ void process_special(INSTR_TYPE instr){
 		break;
 	}
 	default:{
-		printf("unknown special instruction\n");
+		printf("process_special: unknown special instruction\n");
 		break;
 	}
 	}
@@ -256,6 +385,10 @@ void process_r_alu(INSTR_TYPE instr){
 		NEXT_STATE.REGS[rd] = ~(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]);
 		break;
 	}
+	default:{
+		printf("process_r_alu: unknown special instruction\n");
+		break;
+	}
 	}
 }
 
@@ -285,7 +418,7 @@ void process_move(INSTR_TYPE instr){
 		break;
 	}
 	default:{
-		printf("unknown move instruction\n");
+		printf("process_move: unknown move instruction\n");
 		break;
 	}
 	}
@@ -328,7 +461,7 @@ void process_shift(INSTR_TYPE instr){
 		break;
 	}
 	default:{
-		printf("unknown shift instruction\n");
+		printf("process_shift: unknown shift instruction\n");
 		break;
 	}
 	}
@@ -353,7 +486,7 @@ void process_regimm(INSTR_TYPE instr){
 			compare = ((int)CURRENT_STATE.REGS[rs] >= 0);
 		}
 		default:{
-			printf("unknown branch instruction\n");
+			printf("process_regimm case 0: unknown branch instruction\n");
 			break;
 		}
 		}
@@ -373,14 +506,14 @@ void process_regimm(INSTR_TYPE instr){
 			NEXT_STATE.REGS[31] = CURRENT_STATE.PC + 4;
 		}
 		default:{
-			printf("unknown branch instruction\n");
+			printf("process_regimm case 2: unknown branch instruction\n");
 			break;
 		}
 		}
 		break;
 	}
 	default:{
-		printf("unknown branch instruction\n");
+		printf("process_regimm: unknown regimm instruction\n");
 		break;
 	}
 	}
@@ -415,7 +548,7 @@ void process_i_branch(INSTR_TYPE instr){
 		break;
 	}
 	default:{
-		printf("unknown I-type branch\n");
+		printf("process_i_branch: unknown I-type branch\n");
 	}
 	}
 	int offset = (int)GET_BITS(instr, 0, 16);

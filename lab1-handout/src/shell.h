@@ -34,7 +34,7 @@ typedef struct CPU_State_Struct {
 extern CPU_State CURRENT_STATE, NEXT_STATE;
 
 extern int RUN_BIT;	/* run bit */
-
+extern int INSTRUCTION_COUNT;
 uint32_t mem_read_32(uint32_t address);
 void     mem_write_32(uint32_t address, uint32_t value);
 

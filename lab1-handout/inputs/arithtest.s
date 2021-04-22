@@ -1,26 +1,27 @@
-        # Basic arithmetic instructions
-        # This is a hodgepodge of arithmetic instructions to test
-        # your basic functionality.
-        # No overflow exceptions should occur
-	.text
-main:   
-        addiu   $2, $zero, 1024
-        addu    $3, $2, $2
-        or      $4, $3, $2
-        add     $5, $zero, 1234
-        sll     $6, $5, 16
-        addiu   $7, $6, 9999
-        subu    $8, $7, $2
-        xor     $9, $4, $3
-        xori    $10, $2, 255
-        srl     $11, $6, 5
-        sra     $12, $6, 4
-        and     $13, $11, $5
-        andi    $14, $4, 100
-        sub     $15, $zero, $10
-        lui     $17, 100
-        addiu   $v0, $zero, 0xa
-        syscall
-        
-        
-                        
+00  mov r2, #1024
+04  add r3, r2, r2
+08  orr r4, r3, r2
+0c  mov r5, r4, LSL #16
+10  sub r6, r4, r2
+14  eor r7, r4, r3
+18  mvn r8, #65
+1c  mov r9, r8, LSR #5
+20  ov r10, r8, ASR #5
+24  mov r11, r8, ROR #6
+28  and r12, r8, r2
+2c  mul r13, r2, r8
+30  swi #10
+
+
+r2 = 1024
+r3 = 2048
+r4 = 3072
+r5 = ‭201326592‬  0xc00 0000
+r6 = 2048
+r7 = 1024
+r8 = -66
+r9 = 0x 7 ff ff fd
+r10 = 0xffff fffd
+r11 = 0xfbff fffe
+r12 = 1024
+r13 = 0xfffef800

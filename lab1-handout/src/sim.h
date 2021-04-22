@@ -25,5 +25,8 @@ void process_i_branch(INSTR_TYPE);//I-type branch
 void process_shift(INSTR_TYPE);
 void process_move(INSTR_TYPE instr);
 void process_complex_alu(INSTR_TYPE instr);
-void process_r_alu(INSTR_TYPE instr);
+void process_r_alu(INSTR_TYPE);
+void process_i_alu(INSTR_TYPE);
+void process_lw(INSTR_TYPE);
+void process_sw(INSTR_TYPE);
 #endif /* SIM_H_ */
